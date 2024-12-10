@@ -1,0 +1,47 @@
+# CMake файлы и директории
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Conan файлы и директории
+conan.lock
+conanbuildinfo.txt
+conanbuildinfo.cmake
+graph_info.json
+build/
+
+# Сгенерированные bin/ и lib/
+bin/
+lib/
+*.dll
+*.so
+*.dylib
+*.exe
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+
+# Boost-specific build artifacts (если используется локальная сборка Boost)
+boost-build/
+boost/stage/
+boost/bin.v2/
+
+# Файлы IDE
+*.idea/
+*.vscode/
+*.swp
+*.user
+*.workspace
+*.suo
+
+# Лог-файлы
+*.log
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+*.pyc
+__pycache__/

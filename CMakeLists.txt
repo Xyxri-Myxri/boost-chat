@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
-project(asio_example CXX)
+project(ChatApplication VERSION 1.0.0 LANGUAGES CXX)
 
-find_package(Boost REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(example main.cpp)
-target_link_libraries(example PRIVATE Boost::boost)
-target_link_libraries(example PRIVATE nlohmann_json::nlohmann_json)
+find_package(ftxui CONFIG REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
+find_package(Threads REQUIRED)
+
+add_subdirectory(src/client)
+add_subdirectory(src/server)

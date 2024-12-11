@@ -4,27 +4,82 @@
 
 ## Install
 
-The **recommended** way to install the deps of boost-chat is by running the command below:
-
+**Рекомендуемый способ** установить зависимости необходимые для проекта:
+1. Устанавливаем пакетный менеджер pip и инструмент сборки CMake 
+2. Устанавливаем пакетный менеджер для C++ conan 2
 ```bash
-conan install . --output-folder=build --build=missing -s compiler.cppstd=17 -g CMakeToolchain
+pip install conan
+```
+3. Переходим в директорию проекта
+4. Детектим профайл conan
+```bash
+conan profile detect
+```
+5. Устанавливаем зависимости из conanfile.txt
+```bash
+conan install . --output-folder=build --build=missing -s compiler.cppstd=17 -g CMakeToolchain 
+```
+6. Переходим в папку build
+```bash
+cd build 
+```
+7. Конфигурируем проект CMake
+```bash
+cmake .. -DCMAKE_TOOLCHAIN_FILE="./build/build/generators/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Release 
 ```
 
 ## Build
 
-To build boost-chat run the command below
+Для сборки проекта используйте команду ниже:
 
 ```bash
 cmake --build . --config Release
 ```
 
 ## Run
-To run the boost-chat on Windows use
+Для запуска серверной части используйте:
 
 ```bash
 .\src\server\Release\chat_server.exe
 ```
+Для клиентской части:
 
-## Project Structure
+```bash
+.\src\client\Release\chat_client.exe
+```
 
-**ТУТ СТРУКТУРА ПРОЕКТА**
+## Структура проекта: boost-chat
+
+### Верхний уровень:
+
+- `build/`  
+  Каталог для сборки.  
+
+- `include/`  
+  Содержит заголовочные файлы.
+  - `common/message.hpp`  
+    Заголовочный файл с реализацией сообщений.
+
+- `src/`  
+  Исходные файлы проекта.
+  - `client/`  
+    Реализация клиентской части.
+    - `CMakeLists.txt`  
+      Файл CMake для сборки клиента.
+    - `main.cpp`  
+      Точка входа для клиентского приложения.
+  - `server/`  
+    Реализация серверной части.
+    - `CMakeLists.txt`  
+      Файл CMake для сборки сервера.
+    - `main.cpp`  
+      Точка входа для серверного приложения.
+
+- `.gitignore`  
+  Файл, указывающий на файлы и директории, которые должны игнорироваться Git.
+
+- `CMakeLists.txt`  
+  Главный файл CMake для настройки сборки проекта.
+
+- `conanfile.txt`  
+  Файл для управления зависимостями с использованием Conan.

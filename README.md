@@ -1,6 +1,6 @@
 ![](https://github.com/Xyxri-Myxri/boost-chat/blob/develop/GIF.gif)
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/withastro/astro/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Xyxri-Myxri/boost-chat/blob/develop/LICENSE)
 
 ## Install
 

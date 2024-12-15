@@ -14,10 +14,12 @@ public:
     ChatClient(boost::asio::io_context& io_context,
         const tcp::resolver::results_type& endpoints)
         : io_context_(io_context), socket_(io_context) {
+        // Подключение клиента к серверу через указанные конечные точки
         do_connect(endpoints);
     }
     
     void write(const ChatMessage& msg) {
+        // Асинхронная запись сообщения в сокет
         boost::asio::post(io_context_,
             [this, msg]() {
                 bool write_in_progress = !write_msgs_.empty();
@@ -29,26 +31,32 @@ public:
     }
     
     void close() {
+        // Закрытие соединения с сервером
         boost::asio::post(io_context_, [this]() { socket_.close(); });
     }
     
+    // Обработчик входящих сообщений
     std::function<void(const std::string&)> on_message;
     
 private:
     void do_connect(const tcp::resolver::results_type& endpoints) {
+        // Установка соединения с сервером
         boost::asio::async_connect(socket_, endpoints,
             [this](boost::system::error_code ec, tcp::endpoint) {
                 if (!ec) {
+                    // Если соединение успешно установлено, начинаем чтение заголовка
                     do_read_header();
                 }
             });
     }
     
     void do_read_header() {
+        // Чтение заголовка сообщения
         boost::asio::async_read(socket_,
             boost::asio::buffer(read_msg_.data(), ChatMessage::header_length),
             [this](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec && read_msg_.decode_header()) {
+                    // После успешного декодирования заголовка читаем тело сообщения
                     do_read_body();
                 } else {
                     socket_.close();
@@ -57,15 +65,17 @@ private:
     }
     
     void do_read_body() {
+        // Чтение тела сообщения
         boost::asio::async_read(socket_,
             boost::asio::buffer(read_msg_.body(), read_msg_.body_length()),
             [this](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
+                    // Передача сообщения обработчику
                     if (on_message) {
                         std::string msg(read_msg_.body(), read_msg_.body_length());
                         on_message(msg);
                     }
-                    do_read_header();
+                    do_read_header(); // Чтение следующего сообщения
                 } else {
                     socket_.close();
                 }
@@ -73,14 +83,15 @@ private:
     }
     
     void do_write() {
+        // Отправка сообщения серверу
         boost::asio::async_write(socket_,
             boost::asio::buffer(write_msgs_.front().data(),
                 write_msgs_.front().length()),
             [this](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
-                    write_msgs_.pop_front();
+                    write_msgs_.pop_front(); // Удаляем отправленное сообщение из очереди
                     if (!write_msgs_.empty()) {
-                        do_write();
+                        do_write(); // Отправка следующего сообщения
                     }
                 } else {
                     socket_.close();
@@ -88,33 +99,34 @@ private:
             });
     }
     
-    boost::asio::io_context& io_context_;
-    tcp::socket socket_;
-    ChatMessage read_msg_;
-    std::deque<ChatMessage> write_msgs_;
+    boost::asio::io_context& io_context_; // Контекст выполнения для операций ввода-вывода
+    tcp::socket socket_; // TCP-сокет для связи с сервером
+    ChatMessage read_msg_; // Объект для хранения текущего полученного сообщения
+    std::deque<ChatMessage> write_msgs_; // Очередь сообщений для отправки
 };
 
 int main() {
     try {
-        // Инициализация ASIO
+        // Инициализация контекста ASIO
         boost::asio::io_context io_context;
         tcp::resolver resolver(io_context);
         auto endpoints = resolver.resolve("localhost", "8080");
         
-        // Создаем клиент
+        // Создание клиента чата
         ChatClient client(io_context, endpoints);
         std::thread t([&io_context]() { io_context.run(); });
         
-        // Создаем UI
+        // Инициализация переменных для работы с UI
         std::string username;
         std::string input;
         std::vector<std::string> messages;
         
-        // Компоненты FTXUI
-        auto username_input = Input(&username, "Enter username");
-        auto message_input = Input(&input, "Type message");
+        // Компоненты пользовательского интерфейса FTXUI
+        auto username_input = Input(&username, "Введите имя пользователя");
+        auto message_input = Input(&input, "Введите сообщение");
         
-        auto send_button = Button("Send", [&] {
+        auto send_button = Button("Отправить", [&] {
+            // Отправка сообщения при нажатии кнопки
             if (!input.empty() && !username.empty()) {
                 std::string full_message = username + ": " + input;
                 ChatMessage msg;
@@ -130,10 +142,12 @@ int main() {
         client.on_message = [&messages](const std::string& msg) {
             messages.push_back(msg);
             if (messages.size() > 100) {
+                // Удаляем старые сообщения, чтобы избежать переполнения
                 messages.erase(messages.begin());
             }
         };
         
+        // Контейнер для размещения компонентов интерфейса
         auto container = Container::Vertical({
             username_input,
             message_input,
@@ -141,38 +155,39 @@ int main() {
         });
         
         auto renderer = Renderer(container, [&] {
+            // Рендеринг элементов пользовательского интерфейса
             std::vector<Element> message_elements;
             for (const auto& msg : messages) {
                 message_elements.push_back(text(msg));
             }
             
             return vbox({
-                text("Chat Client") | bold | center,
+                text("Клиент чата") | bold | center,
                 separator(),
                 vbox(message_elements) | frame | flex,
                 separator(),
                 hbox({
-                    text("Username: "),
+                    text("Имя пользователя: "),
                     username_input->Render() | flex,
                 }),
                 hbox({
-                    text("Message: "),
+                    text("Сообщение: "),
                     message_input->Render() | flex,
                 }),
                 send_button->Render() | center,
             });
         });
         
+        // Запуск интерфейса
         auto screen = ScreenInteractive::TerminalOutput();
         screen.Loop(renderer);
         
-        // Очистка
+        // Завершение работы клиента
         client.close();
         t.join();
         
-    }
-    catch (std::exception& e) {
-        std::cerr << "Exception: " << e.what() << "\n";
+    } catch (std::exception& e) {
+        std::cerr << "Ошибка: " << e.what() << "\n";
     }
     
     return 0;
